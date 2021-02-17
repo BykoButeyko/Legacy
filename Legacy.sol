@@ -1,17 +1,18 @@
 pragma solidity =0.8.1;
 
 contract Legacy {
-    address public successor;
-    uint public expiration;
+    mapping(address => uint) public checkouts;
+    mapping(address => uint) public expiration;
 
-    constructor(address _successor, uint timeToMaturity) payable {
-        maturity = block.timestamp + expiry;
-        successor = _successor;
+    function addSuccessor(address kid, uint expiryDate) external payable {
+        checkouts[successor] = msg.value;
+        expiration[successor] = block.timestamp + expiryDate;
     }
+    
 
     function withdraw() external {
-        require(block.timestamp >= expiration, 'too early');
-        require(msg.sender == successor, 'only successor can withdraw');
-        payable(msg.sender).transfer(address(this).balance);
+        require(expiration[msg.sender] <= block.timestamp, 'too early');
+        require(checkouts[msg.sender] > 0, 'only successor can withdraw');
+        payable(msg.sender).transfer(checkouts[msg.sender]);
     }
 }
