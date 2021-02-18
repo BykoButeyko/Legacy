@@ -1,28 +1,32 @@
 pragma solidity =0.8.1;
 
 contract Legacy {
-    mapping(address => uint) public checkout;
-    mapping(address => uint) public expiration;
-    mapping(address => bool) public rewarded;
+
+    struct Beneficiary {
+        uint prize;
+        uint expiration;
+        bool isRewarded;
+    }
+    
+    mapping(address => Beneficiary) public beneficiaries;
     address public admin;
 
     constructor() {
         admin = msg.sender;
     }
 
-    function addSuccessor(address successor, uint expiryDate) external payable {
+    function addBeneficiary(address beneficiary, uint expiryDate) external payable {
         require(msg.sender == admin, 'only admin');
-        require(checkout[msg.sender] == 0, 'successor already added');
-        checkout[successor] = msg.value;
-        expiration[successor] = block.timestamp + expiryDate;
+        require(beneficiaries[msg.sender].prize == 0, 'beneficiary already added');
+        beneficiaries[beneficiary] = Beneficiary(msg.value, block.timestamp + expiryDate, false);
     }
     
-
     function withdraw() external {
-        require(expiration[msg.sender] <= block.timestamp, 'too early');
-        require(checkout[msg.sender] > 0, 'only successor can withdraw');
-        require(rewarded[msg.sender] == false, 'rewarded already');
-        rewarded[msg.sender] = true;
-        payable(msg.sender).transfer(checkout[msg.sender]);
+        Beneficiary storage beneficiary = beneficiaries[msg.sender];
+        require(beneficiary.expiration <= block.timestamp, 'too early');
+        require(beneficiary.prize > 0, 'only beneficiary can withdraw');
+        require(beneficiary.isRewarded == false, 'Rewarded already');
+        beneficiary.isRewarded = true;
+        payable(msg.sender).transfer(beneficiary.prize);
     }
 }
